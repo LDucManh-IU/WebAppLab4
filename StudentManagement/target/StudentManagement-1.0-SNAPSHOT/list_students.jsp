@@ -1,6 +1,6 @@
 <%-- 
     Document   : list_students
-    Created on : Nov 5, 2025, 2:06:14 PM
+    Created on : Nov 5, 2025, 2:06:14 PM
     Author     : Admin
 --%>
 
@@ -64,6 +64,52 @@
             margin-right: 10px;
         }
         .delete-link { color: #dc3545; }
+
+        .search input{
+            width: 30%;
+            margin-bottom:15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        /* Pagination */
+        .pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .pagination a, .pagination strong {
+            display: inline-block;
+            margin: 0 5px;
+            padding: 8px 12px;
+            text-decoration: none;
+            border: 1px solid #007bff;
+            border-radius: 4px;
+            color: #007bff;
+            background: white;
+        }
+        .pagination strong {
+            background-color: #007bff;
+            color: white;
+        }
+        .pagination a:hover {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                font-size: 12px;
+            }
+            th, td {
+                padding: 5px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -81,8 +127,25 @@
         </div>
     <% } %>
     
-    <a href="add_student.jsp" class="btn">➕ Add New Student</a>
+    <script>
+        setTimeout(function() {
+        var messages = document.querySelectorAll('.message');
+        messages.forEach(function(msg) {
+            msg.style.display = 'none';
+            });
+        }, 3000);
+    </script>
     
+    <form class="search" action="list_students.jsp" method="GET">
+        <input type="text" name="keyword" placeholder="Search by name, code, or major..." 
+               value="<%= request.getParameter("keyword") != null ? request.getParameter("keyword") : "" %>">
+        <button class="btn" type="submit">Search</button>
+        <a class="btn" href="list_students.jsp">Clear</a>
+    </form>
+
+    <a href="add_student.jsp" class="btn">➕ Add New Student</a>
+ 
+    <div class="table-responsive">    
     <table>
         <thead>
             <tr>
@@ -95,24 +158,73 @@
                 <th>Actions</th>
             </tr>
         </thead>
-        <tbody>
+
 <%
     Connection conn = null;
-    Statement stmt = null;
+    PreparedStatement pstmt = null;
     ResultSet rs = null;
-    
+    int totalRecords = 0;
+    int totalPages = 0;
+    int currentPage = 1;
+    int recordsPerPage = 10;
+    int offset = 0;
+
     try {
         Class.forName("com.mysql.cj.jdbc.Driver");
-        
         conn = DriverManager.getConnection(
             "jdbc:mysql://localhost:3306/student_management",
             "root",
             "22042005Lducmanh."
         );
+
+        // Get pagination info
+        String pageParam = request.getParameter("page");
+        if (pageParam != null && !pageParam.isEmpty()) {
+            currentPage = Integer.parseInt(pageParam);
+            if (currentPage < 1) currentPage = 1;
+        }
+        offset = (currentPage - 1) * recordsPerPage;
+
+        String keyword = request.getParameter("keyword");
+        String sql;
+        String countSql;
         
-        stmt = conn.createStatement();
-        String sql = "SELECT * FROM students ORDER BY id DESC";
-        rs = stmt.executeQuery(sql);
+        if (keyword != null && !keyword.isEmpty()) {
+            sql = "SELECT * FROM students WHERE full_name LIKE ? OR student_code LIKE ? OR major LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?";
+            countSql = "SELECT COUNT(*) FROM students WHERE full_name LIKE ? OR student_code LIKE ? OR major LIKE ?";
+            pstmt = conn.prepareStatement(countSql);
+            pstmt.setString(1, "%" + keyword + "%");
+            pstmt.setString(2, "%" + keyword + "%");
+            pstmt.setString(3, "%" + keyword + "%");
+        } else {
+            sql = "SELECT * FROM students ORDER BY id DESC LIMIT ? OFFSET ?";
+            countSql = "SELECT COUNT(*) FROM students";
+            pstmt = conn.prepareStatement(countSql);
+        }
+
+        // Count total records
+        ResultSet countRs = pstmt.executeQuery();
+        if (countRs.next()) totalRecords = countRs.getInt(1);
+        countRs.close();
+        pstmt.close();
+
+        totalPages = (int) Math.ceil((double) totalRecords / recordsPerPage);
+
+        // Query for current page
+        if (keyword != null && !keyword.isEmpty()) {
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, "%" + keyword + "%");
+            pstmt.setString(2, "%" + keyword + "%");
+            pstmt.setString(3, "%" + keyword + "%");
+            pstmt.setInt(4, recordsPerPage);
+            pstmt.setInt(5, offset);
+        } else {
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, recordsPerPage);
+            pstmt.setInt(2, offset);
+        }
+
+        rs = pstmt.executeQuery();
         
         while (rs.next()) {
             int id = rs.getInt("id");
@@ -138,24 +250,40 @@
             </tr>
 <%
         }
-    } catch (ClassNotFoundException e) {
-        out.println("<tr><td colspan='7'>Error: JDBC Driver not found!</td></tr>");
-        e.printStackTrace();
-    } catch (SQLException e) {
-        out.println("<tr><td colspan='7'>Database Error: " + e.getMessage() + "</td></tr>");
+    } catch (Exception e) {
+        out.println("<tr><td colspan='7'>Error: " + e.getMessage() + "</td></tr>");
         e.printStackTrace();
     } finally {
         try {
             if (rs != null) rs.close();
-            if (stmt != null) stmt.close();
+            if (pstmt != null) pstmt.close();
             if (conn != null) conn.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 %>
-        </tbody>
     </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+        <% if (currentPage > 1) { %>
+            <a href="list_students.jsp?page=<%= currentPage - 1 %><%= (request.getParameter("keyword") != null && !request.getParameter("keyword").isEmpty()) ? "&keyword=" + request.getParameter("keyword") : "" %>">Previous</a>
+        <% } %>
+
+        <% for (int i = 1; i <= totalPages; i++) { %>
+            <% if (i == currentPage) { %>
+                <strong><%= i %></strong>
+            <% } else { %>
+                <a href="list_students.jsp?page=<%= i %><%= (request.getParameter("keyword") != null && !request.getParameter("keyword").isEmpty()) ? "&keyword=" + request.getParameter("keyword") : "" %>"><%= i %></a>
+            <% } %>
+        <% } %>
+
+        <% if (currentPage < totalPages) { %>
+            <a href="list_students.jsp?page=<%= currentPage + 1 %><%= (request.getParameter("keyword") != null && !request.getParameter("keyword").isEmpty()) ? "&keyword=" + request.getParameter("keyword") : "" %>">Next</a>
+        <% } %>
+    </div>
+
 </body>
 </html>
-

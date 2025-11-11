@@ -79,8 +79,16 @@
                 <%= request.getParameter("error") %>
             </div>
         <% } %>
+        <script>
+            function submitForm(form) {
+                var btn = form.querySelector('button[type="submit"]');
+                    btn.disabled = true;
+                    btn.textContent = 'Processing...';
+                return true;
+            }
+        </script>
         
-        <form action="process_add.jsp" method="POST">
+        <form action="process_add.jsp" method="POST" onsubmit="return submitForm(this)">
             <div class="form-group">
                 <label for="student_code">Student Code <span class="required">*</span></label>
                 <input type="text" id="student_code" name="student_code" 
