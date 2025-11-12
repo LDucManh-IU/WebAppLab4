@@ -5,13 +5,15 @@ Student ID: ITITIU23016<br>
 Class: ITIT23UN11<br>
 
 COMPLETED EXERCISES:
-[x] Exercise 5: Search Functionality
-[x] Exercise 6: Validation Enhancement
-[x] Exercise 7: User Experience Improvement
-[ ] Bonus 1: CSV Export
-[ ] Bonus 2: Sortable Columns
+<br>
+[x] Exercise 5: Search Functionality<br>
+[x] Exercise 6: Validation Enhancement<br>
+[x] Exercise 7: User Experience Improvement<br>
+[ ] Bonus 1: CSV Export<br>
+[ ] Bonus 2: Sortable Columns<br>
 
-KNOWN ISSUES:
-EXTRA FEATURES:
-TIME SPENT: 3 hours
+KNOWN ISSUES:<br>
+EXTRA FEATURES:<br>
+TIME SPENT: 3 hours<br>
 REFERENCES USED:
+<br>
