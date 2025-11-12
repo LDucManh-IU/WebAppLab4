@@ -1,7 +1,8 @@
-STUDENT INFORMATION:
-Name: Lưu Đức Mạnh
-Student ID: ITITIU23016
-Class: ITIT23UN11
+# STUDENT INFORMATION:
+<br>
+Name: Lưu Đức Mạnh<br>
+Student ID: ITITIU23016<br>
+Class: ITIT23UN11<br>
 
 COMPLETED EXERCISES:
 [x] Exercise 5: Search Functionality
